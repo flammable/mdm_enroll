@@ -1,0 +1,23 @@
+#!/bin/bash
+
+awk="/usr/bin/awk"
+open="/usr/bin/open"
+profiles="/usr/bin/profiles"
+python="/usr/bin/python"
+sudo="/usr/bin/sudo"
+sw_vers="/usr/bin/sw_vers"
+
+current_user=$(${python} -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
+macos_version=$(${sw_vers} -productVersion | ${awk} -F '.' '{print $2}')
+
+${profiles} -I -F /tmp/profiles/sample.mobileconfig
+
+# Is the OS version macOS 10.13 or later? If so, open System Preferences so the user can complete UAMDM.
+# Only applies if this pkg is installed manually, since the installcheck_script will abort the installation prior to this script running.
+if [[ "$macos_version" -ge 13 ]]; then
+ if [[ "${current_user}" ]]; then
+  ${sudo} -u "${current_user}" ${open} /System/Library/PreferencePanes/Profiles.prefPane
+ fi
+fi
+
+exit
